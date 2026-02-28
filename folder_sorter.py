@@ -65,8 +65,19 @@ def sort_images_by_name(source_folder, file_extensions=None):
                 # Look for a 4-digit year in any part
                 year = None
                 for part in parts[1:]:
-                    if part.isdigit() and len(part) == 4 and 1900 <= int(part) <= 2100:
+                    # Check if this part contains underscores (like 1978_251216_121853_1-12)
+                    if '_' in part:
+                        # Split by underscores and look for a year
+                        sub_parts = part.split('_')
+                        for sub_part in sub_parts:
+                            if sub_part.isdigit() and len(sub_part) == 4 and 1900 <= int(sub_part) <= 2100:
+                                year = sub_part
+                                break
+                    # Also check if the part itself is a year
+                    elif part.isdigit() and len(part) == 4 and 1900 <= int(part) <= 2100:
                         year = part
+                    
+                    if year:
                         break
                 
                 # Use year as subfolder if found, otherwise use remaining parts
