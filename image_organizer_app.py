@@ -47,6 +47,7 @@ class ImageOrganizerApp:
         # Variables
         self.source_folder = ""
         self.is_processing = False
+        self.audio_orderer = None
         
         # Setup UI
         self.setup_ui()
@@ -87,7 +88,12 @@ class ImageOrganizerApp:
         notebook.add(self.interactive_tab, text='👁️ Interactive Fix')
         self.setup_interactive_tab()
         
-        # Tab 5: Settings
+        # Tab 5: Audio Ordering
+        self.audio_tab = ttk.Frame(notebook)
+        notebook.add(self.audio_tab, text='🎤 Audio Ordering')
+        self.setup_audio_tab()
+        
+        # Tab 6: Settings
         self.settings_tab = ttk.Frame(notebook)
         notebook.add(self.settings_tab, text='⚙️ Settings')
         self.setup_settings_tab()
@@ -331,6 +337,135 @@ class ImageOrganizerApp:
    - All station codes from your network
    - Years 1970-2026
    - Multiple observation times
+        """
+        
+        info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
+        info_label.pack()
+        
+    def setup_audio_tab(self):
+        """Audio ordering tab"""
+        main_frame = ttk.Frame(self.audio_tab, padding="10")
+        main_frame.pack(fill='both', expand=True)
+        
+        # Title
+        title = ttk.Label(main_frame, text="🎤 Audio Ordering", style='Title.TLabel')
+        title.pack(pady=(0, 20))
+        
+        # Folder selection
+        folder_frame = ttk.LabelFrame(main_frame, text="Select Folder", padding="10")
+        folder_frame.pack(fill='x', pady=(0, 20))
+        
+        self.audio_folder_var = tk.StringVar()
+        folder_entry = ttk.Entry(folder_frame, textvariable=self.audio_folder_var, width=70)
+        folder_entry.pack(side='left', fill='x', expand=True, padx=(0, 10))
+        
+        browse_btn = ttk.Button(folder_frame, text="Browse", command=self.browse_audio_folder)
+        browse_btn.pack(side='right')
+        
+        # Configuration
+        config_frame = ttk.LabelFrame(main_frame, text="Station Configuration", padding="10")
+        config_frame.pack(fill='x', pady=(0, 20))
+        
+        # Station dropdown
+        station_frame = ttk.Frame(config_frame)
+        station_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(station_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        self.audio_station_var = tk.StringVar()
+        station_combo = ttk.Combobox(station_frame, textvariable=self.audio_station_var, values=STATION_CODES, width=20)
+        station_combo.pack(side='left', padx=(0, 10))
+        if STATION_CODES:
+            station_combo.current(0)
+        
+        # Year dropdown
+        year_frame = ttk.Frame(config_frame)
+        year_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(year_frame, text="Year:").pack(side='left', padx=(0, 10))
+        self.audio_year_var = tk.StringVar()
+        year_combo = ttk.Combobox(year_frame, textvariable=self.audio_year_var, values=YEARS, width=10)
+        year_combo.pack(side='left', padx=(0, 10))
+        current_year = datetime.datetime.now().year
+        if current_year in YEARS:
+            year_combo.set(str(current_year))
+        
+        # Observation time dropdown
+        time_frame = ttk.Frame(config_frame)
+        time_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(time_frame, text="Observation Time:").pack(side='left', padx=(0, 10))
+        self.audio_obs_time_var = tk.StringVar()
+        time_combo = ttk.Combobox(time_frame, textvariable=self.audio_obs_time_var, values=OBSERVATION_TIMES, width=8)
+        time_combo.pack(side='left', padx=(0, 10))
+        time_combo.set("06")
+        
+        # Audio controls
+        audio_frame = ttk.LabelFrame(main_frame, text="Audio Recording", padding="10")
+        audio_frame.pack(fill='x', pady=(0, 20))
+        
+        # Recording status
+        self.audio_status_var = tk.StringVar(value="Ready to record")
+        status_label = ttk.Label(audio_frame, textvariable=self.audio_status_var, font=('Arial', 10, 'bold'))
+        status_label.pack(pady=(0, 10))
+        
+        # Control buttons
+        btn_frame = ttk.Frame(audio_frame)
+        btn_frame.pack()
+        
+        self.record_btn = ttk.Button(btn_frame, text="🎤 Start Recording", command=self.start_audio_recording)
+        self.record_btn.pack(side='left', padx=5)
+        
+        self.stop_btn = ttk.Button(btn_frame, text="⏹️ Stop Recording", command=self.stop_audio_recording, state='disabled')
+        self.stop_btn.pack(side='left', padx=5)
+        
+        ttk.Button(btn_frame, text="🔧 Install Speech Recognition", command=self.install_speech_recognition).pack(side='left', padx=5)
+        
+        # Detected numbers display
+        detected_frame = ttk.LabelFrame(main_frame, text="Detected Month Numbers", padding="10")
+        detected_frame.pack(fill='x', pady=(0, 20))
+        
+        self.detected_numbers_var = tk.StringVar(value="No numbers detected yet")
+        detected_label = ttk.Label(detected_frame, textvariable=self.detected_numbers_var, font=('Arial', 12))
+        detected_label.pack()
+        
+        # Operations
+        ops_frame = ttk.LabelFrame(main_frame, text="Operations", padding="10")
+        ops_frame.pack(fill='x', pady=(0, 20))
+        
+        ops_btn_frame = ttk.Frame(ops_frame)
+        ops_btn_frame.pack()
+        
+        ttk.Button(ops_btn_frame, text="🏷️ Apply Audio Ordering", command=self.apply_audio_ordering).pack(side='left', padx=5)
+        ttk.Button(ops_btn_frame, text="🔄 Clear Detection", command=self.clear_audio_detection).pack(side='left', padx=5)
+        
+        # Info
+        info_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="10")
+        info_frame.pack(fill='both', expand=True)
+        
+        info_text = """
+🎤 Audio Ordering Instructions:
+
+1. Select folder with jumbled images
+2. Configure station, year, and time
+3. Click "Start Recording"
+4. Open your image viewer
+5. Swipe through images in correct order
+6. Say month numbers as you view each image:
+   - Say "one", "two", "three" OR "1", "2", "3"
+   - Only numbers 1-12 are recognized
+7. Click "Stop Recording" when done
+8. Review detected numbers
+9. Click "Apply Audio Ordering" to rename files
+
+💡 Tips:
+- Speak clearly and pause between numbers
+- Works with both word and digit numbers
+- Duplicate numbers are automatically ignored
+- Install Speech Recognition if needed
+
+📋 Example workflow:
+- View image #1 → Say "one"
+- View image #2 → Say "two" 
+- View image #3 → Say "four" (if month 3 is missing)
+- Continue through all images
+- Apply ordering to rename correctly
         """
         
         info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
@@ -729,6 +864,137 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
                 self.status_var.set("Ready")
         
         threading.Thread(target=run_restore, daemon=True).start()
+    
+    def browse_audio_folder(self):
+        """Browse for audio folder"""
+        folder = filedialog.askdirectory()
+        if folder:
+            self.audio_folder_var.set(folder)
+            
+    def audio_callback(self, message):
+        """Callback for audio orderer updates"""
+        self.detected_numbers_var.set(message)
+        self.log_message(f"🎤 {message}")
+        self.root.update_idletasks()
+    
+    def start_audio_recording(self):
+        """Start audio recording"""
+        folder = self.audio_folder_var.get()
+        if not folder or not Path(folder).exists():
+            messagebox.showerror("Error", "Please select a valid folder")
+            return
+        
+        try:
+            import audio_image_order
+            self.audio_orderer = audio_image_order.AudioImageOrder(folder, self.audio_callback)
+            
+            success, message = self.audio_orderer.start_recording()
+            if success:
+                self.audio_status_var.set("🔴 Recording... Speak month numbers")
+                self.record_btn.config(state='disabled')
+                self.stop_btn.config(state='normal')
+                self.log_message(f"🎤 {message}")
+            else:
+                messagebox.showerror("Error", message)
+                
+        except ImportError:
+            messagebox.showerror("Error", "Audio ordering module not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to start recording: {e}")
+    
+    def stop_audio_recording(self):
+        """Stop audio recording"""
+        if not self.audio_orderer:
+            return
+        
+        success, message = self.audio_orderer.stop_recording()
+        
+        self.audio_status_var.set("⏹️ Recording stopped")
+        self.record_btn.config(state='normal')
+        self.stop_btn.config(state='disabled')
+        
+        detected = self.audio_orderer.get_detected_numbers()
+        self.detected_numbers_var.set(f"Detected: {detected}")
+        
+        self.log_message(f"🎤 {message}")
+        self.log_message(f"📊 Detected numbers: {detected}")
+    
+    def clear_audio_detection(self):
+        """Clear detected numbers"""
+        self.detected_numbers_var.set("No numbers detected yet")
+        self.audio_status_var.set("Ready to record")
+        self.audio_orderer = None
+        self.log_message("🔄 Audio detection cleared")
+    
+    def apply_audio_ordering(self):
+        """Apply audio ordering to rename files"""
+        if not self.audio_orderer:
+            messagebox.showerror("Error", "No audio recording to apply")
+            return
+        
+        station = self.audio_station_var.get()
+        year = int(self.audio_year_var.get())
+        obs_time = self.audio_obs_time_var.get()
+        
+        if self.is_processing:
+            messagebox.showwarning("Warning", "Another operation is in progress")
+            return
+        
+        self.is_processing = True
+        self.status_var.set("Applying audio ordering...")
+        
+        def run_apply():
+            try:
+                success, result = self.audio_orderer.apply_ordering(station, year, obs_time)
+                
+                if success:
+                    self.log_message("✅ Audio ordering applied successfully!")
+                    for line in result:
+                        self.log_message(f"  {line}")
+                    messagebox.showinfo("Success", "Audio ordering applied successfully!")
+                else:
+                    self.log_message(f"❌ {result}")
+                    messagebox.showerror("Error", result)
+                    
+            except Exception as e:
+                self.log_message(f"Error: {e}")
+                messagebox.showerror("Error", f"Audio ordering failed: {e}")
+            finally:
+                self.is_processing = False
+                self.status_var.set("Ready")
+        
+        threading.Thread(target=run_apply, daemon=True).start()
+    
+    def install_speech_recognition(self):
+        """Install speech recognition packages"""
+        self.status_var.set("Installing speech recognition...")
+        
+        def run_install():
+            try:
+                import subprocess
+                import sys
+                
+                # Install packages
+                packages = ["SpeechRecognition", "pyaudio"]
+                for package in packages:
+                    self.log_message(f"📦 Installing {package}...")
+                    result = subprocess.run([sys.executable, "-m", "pip", "install", package], 
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        self.log_message(f"✅ {package} installed successfully")
+                    else:
+                        self.log_message(f"❌ Failed to install {package}: {result.stderr}")
+                
+                self.log_message("🎤 Speech recognition installation complete!")
+                messagebox.showinfo("Success", "Speech recognition installed successfully!")
+                
+            except Exception as e:
+                self.log_message(f"❌ Installation failed: {e}")
+                messagebox.showerror("Error", f"Installation failed: {e}")
+            finally:
+                self.status_var.set("Ready")
+        
+        threading.Thread(target=run_install, daemon=True).start()
 
 def main():
     """Main entry point"""
