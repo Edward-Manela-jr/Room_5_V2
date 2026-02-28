@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from PIL import Image, ExifTags
 from pathlib import Path
 
@@ -84,23 +85,29 @@ def fix_image_orientation(source_folder):
     print(f"❌ Errors: {error_count} images")
 
 def main():
-    source_folder = input("Enter the path to the folder to fix orientations: ").strip()
-    
-    # Remove quotes if user added them
-    if source_folder.startswith('"') and source_folder.endswith('"'):
-        source_folder = source_folder[1:-1]
-    elif source_folder.startswith("'") and source_folder.endswith("'"):
-        source_folder = source_folder[1:-1]
-    
-    # Ask for confirmation before proceeding
-    print(f"\n⚠️  This will modify image files in place!")
-    print(f"📁 Target folder: {source_folder}")
-    confirm = input("Do you want to continue? (y/N): ").strip().lower()
-    
-    if confirm in ['y', 'yes']:
+    # Check if path provided as command line argument
+    if len(sys.argv) > 1:
+        source_folder = sys.argv[1]
+        print(f"Using command line path: {source_folder}")
         fix_image_orientation(source_folder)
     else:
-        print("Operation cancelled.")
+        source_folder = input("Enter the path to the folder to fix orientations: ").strip()
+        
+        # Remove quotes if user added them
+        if source_folder.startswith('"') and source_folder.endswith('"'):
+            source_folder = source_folder[1:-1]
+        elif source_folder.startswith("'") and source_folder.endswith("'"):
+            source_folder = source_folder[1:-1]
+        
+        # Ask for confirmation before proceeding
+        print(f"\n⚠️  This will modify image files in place!")
+        print(f"📁 Target folder: {source_folder}")
+        confirm = input("Do you want to continue? (y/N): ").strip().lower()
+        
+        if confirm in ['y', 'yes']:
+            fix_image_orientation(source_folder)
+        else:
+            print("Operation cancelled.")
 
 if __name__ == "__main__":
     main()
