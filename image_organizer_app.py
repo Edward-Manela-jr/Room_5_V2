@@ -93,7 +93,12 @@ class ImageOrganizerApp:
         notebook.add(self.audio_tab, text='🎤 Audio Ordering')
         self.setup_audio_tab()
         
-        # Tab 6: Settings
+        # Tab 6: Visual Number Ordering
+        self.visual_tab = ttk.Frame(notebook)
+        notebook.add(self.visual_tab, text='🔢 Visual Ordering')
+        self.setup_visual_tab()
+        
+        # Tab 7: Settings
         self.settings_tab = ttk.Frame(notebook)
         notebook.add(self.settings_tab, text='⚙️ Settings')
         self.setup_settings_tab()
@@ -466,6 +471,111 @@ class ImageOrganizerApp:
 - View image #3 → Say "four" (if month 3 is missing)
 - Continue through all images
 - Apply ordering to rename correctly
+        """
+        
+        info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
+        info_label.pack()
+        
+    def setup_visual_tab(self):
+        """Visual number ordering tab"""
+        main_frame = ttk.Frame(self.visual_tab, padding="10")
+        main_frame.pack(fill='both', expand=True)
+        
+        # Title
+        title = ttk.Label(main_frame, text="🔢 Visual Number Ordering", style='Title.TLabel')
+        title.pack(pady=(0, 20))
+        
+        # Folder selection
+        folder_frame = ttk.LabelFrame(main_frame, text="Select Folder", padding="10")
+        folder_frame.pack(fill='x', pady=(0, 20))
+        
+        self.visual_folder_var = tk.StringVar()
+        folder_entry = ttk.Entry(folder_frame, textvariable=self.visual_folder_var, width=70)
+        folder_entry.pack(side='left', fill='x', expand=True, padx=(0, 10))
+        
+        browse_btn = ttk.Button(folder_frame, text="Browse", command=self.browse_visual_folder)
+        browse_btn.pack(side='right')
+        
+        # Configuration
+        config_frame = ttk.LabelFrame(main_frame, text="Station Configuration", padding="10")
+        config_frame.pack(fill='x', pady=(0, 20))
+        
+        # Station dropdown
+        station_frame = ttk.Frame(config_frame)
+        station_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(station_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        self.visual_station_var = tk.StringVar()
+        station_combo = ttk.Combobox(station_frame, textvariable=self.visual_station_var, values=STATION_CODES, width=20)
+        station_combo.pack(side='left', padx=(0, 10))
+        if STATION_CODES:
+            station_combo.current(0)
+        
+        # Year dropdown
+        year_frame = ttk.Frame(config_frame)
+        year_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(year_frame, text="Year:").pack(side='left', padx=(0, 10))
+        self.visual_year_var = tk.StringVar()
+        year_combo = ttk.Combobox(year_frame, textvariable=self.visual_year_var, values=YEARS, width=10)
+        year_combo.pack(side='left', padx=(0, 10))
+        current_year = datetime.datetime.now().year
+        if current_year in YEARS:
+            year_combo.set(str(current_year))
+        
+        # Observation time dropdown
+        time_frame = ttk.Frame(config_frame)
+        time_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(time_frame, text="Observation Time:").pack(side='left', padx=(0, 10))
+        self.visual_obs_time_var = tk.StringVar()
+        time_combo = ttk.Combobox(time_frame, textvariable=self.visual_obs_time_var, values=OBSERVATION_TIMES, width=8)
+        time_combo.pack(side='left', padx=(0, 10))
+        time_combo.set("06")
+        
+        # Operations
+        ops_frame = ttk.LabelFrame(main_frame, text="Operations", padding="10")
+        ops_frame.pack(fill='x', pady=(0, 20))
+        
+        ttk.Button(ops_frame, text="🔢 Open Visual Selector", command=self.open_visual_selector).pack(pady=10)
+        
+        # Info
+        info_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="10")
+        info_frame.pack(fill='both', expand=True)
+        
+        info_text = """
+🔢 Visual Number Ordering Instructions:
+
+1. Select folder with jumbled images
+2. Configure station, year, and time
+3. Click "Open Visual Selector"
+4. A new window will open with numbers 1-12
+5. Open your image viewer with the selected folder
+6. Look at each image in order
+7. Click the corresponding month number for each image:
+   - First image → Click its month number
+   - Second image → Click its month number
+   - Continue through all images
+8. Numbers will highlight as you select them
+9. Click "Apply Ordering" when done
+10. Files will be renamed based on your selection order
+
+💡 Features:
+- Visual 3x4 grid of number buttons (1-12)
+- Color-coded highlighting for selection order
+- Clear selection option to start over
+- Real-time order display
+- Validation against image count
+
+📋 Example Workflow:
+- Image #1 shows January → Click "1"
+- Image #2 shows March → Click "3" 
+- Image #3 shows May → Click "5"
+- Continue through all images
+- Apply ordering → Files renamed correctly
+
+🎯 Perfect for:
+- When you can see the months in images
+- When audio recognition isn't suitable
+- Quick visual verification
+- Precise manual control
         """
         
         info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
@@ -995,6 +1105,42 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
                 self.status_var.set("Ready")
         
         threading.Thread(target=run_install, daemon=True).start()
+    
+    def browse_visual_folder(self):
+        """Browse for visual folder"""
+        folder = filedialog.askdirectory()
+        if folder:
+            self.visual_folder_var.set(folder)
+    
+    def open_visual_selector(self):
+        """Open visual number selector window"""
+        folder = self.visual_folder_var.get()
+        if not folder or not Path(folder).exists():
+            messagebox.showerror("Error", "Please select a valid folder")
+            return
+        
+        station = self.visual_station_var.get()
+        year = int(self.visual_year_var.get())
+        obs_time = self.visual_obs_time_var.get()
+        
+        try:
+            import visual_number_order
+            
+            def callback(results):
+                self.log_message("✅ Visual ordering applied successfully!")
+                for line in results:
+                    self.log_message(f"  {line}")
+                messagebox.showinfo("Success", "Visual ordering applied successfully!")
+            
+            orderer = visual_number_order.VisualNumberOrder(folder, station, year, obs_time)
+            orderer.create_selection_window(callback)
+            
+            self.log_message(f"🔢 Visual selector opened for {folder}")
+            
+        except ImportError:
+            messagebox.showerror("Error", "Visual ordering module not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open visual selector: {e}")
 
 def main():
     """Main entry point"""
