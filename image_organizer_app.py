@@ -31,6 +31,19 @@ STATION_CODES = [
     "SOLWEZ01", "ZAMBEZ01"
 ]
 
+# Station code aliases for dropdown
+STATION_CODE_ALIASES = [
+    "MOZ304A", "MOZ305A", "MOZ306A", "MOZ307A", "MOZ308A",
+    "MOZ309A", "MOZ310A", "MOZ311A", "MOZ312A", "MOZ313A",
+    "MOZ314A", "MOZ315A", "MOZ316A", "MOZ317A", "MOZ318A",
+    "MOZ319A", "MOZ320A", "MOZ321A", "MOZ322A", "MOZ323A",
+    "MOZ324A", "MOZ325A", "MOZ326A", "MOZ327A", "MOZ328A",
+    "MOZ329A", "MOZ330A", "MOZ331A", "MOZ332A", "MOZ333A",
+    "MOZ334A", "MOZ335A", "MOZ336A", "MOZ337A", "MOZ338A",
+    "MOZ339A", "MOZ340A", "MOZ341A", "MOZ342A", "MOZ343A",
+    "MOZ344A", "MOZ345A"
+]
+
 # Years for dropdown (1970-2026)
 YEARS = list(range(1970, 2027))
 
@@ -61,6 +74,30 @@ class ImageOrganizerApp:
         # Configure styles
         style.configure('Title.TLabel', font=('Arial', 12, 'bold'))
         style.configure('Header.TLabel', font=('Arial', 10, 'bold'))
+    
+    def create_scrollable_frame(self, parent):
+        """Create a scrollable frame that works on small screens"""
+        canvas = tk.Canvas(parent, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Bind mousewheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        return scrollable_frame
         
     def setup_ui(self):
         """Main UI setup"""
@@ -97,6 +134,11 @@ class ImageOrganizerApp:
         self.visual_tab = ttk.Frame(notebook)
         notebook.add(self.visual_tab, text='🔢 Visual Ordering')
         self.setup_visual_tab()
+        
+        # Tab 7: Simple 1-12 Renaming
+        self.simple_rename_tab = ttk.Frame(notebook)
+        notebook.add(self.simple_rename_tab, text='🔢 1-12 Rename')
+        self.setup_simple_rename_tab()
         
         # Tab 7: Settings
         self.settings_tab = ttk.Frame(notebook)
@@ -252,15 +294,16 @@ class ImageOrganizerApp:
         
     def setup_alias_tab(self):
         """Station alias tab"""
-        main_frame = ttk.Frame(self.alias_tab, padding="10")
-        main_frame.pack(fill='both', expand=True)
+        main_frame = self.create_scrollable_frame(self.alias_tab)
+        main_frame_padding = ttk.Frame(main_frame, padding="10")
+        main_frame_padding.pack(fill='both', expand=True)
         
         # Title
-        title = ttk.Label(main_frame, text="🏷️ Station Alias", style='Title.TLabel')
+        title = ttk.Label(main_frame_padding, text="🏷️ Station Alias", style='Title.TLabel')
         title.pack(pady=(0, 20))
         
         # Folder selection
-        folder_frame = ttk.LabelFrame(main_frame, text="Select Folder", padding="10")
+        folder_frame = ttk.LabelFrame(main_frame_padding, text="Select Folder", padding="10")
         folder_frame.pack(fill='x', pady=(0, 20))
         
         self.alias_folder_var = tk.StringVar()
@@ -271,18 +314,29 @@ class ImageOrganizerApp:
         browse_btn.pack(side='right')
         
         # Configuration
-        config_frame = ttk.LabelFrame(main_frame, text="Station Configuration", padding="10")
+        config_frame = ttk.LabelFrame(main_frame_padding, text="Station Configuration", padding="10")
         config_frame.pack(fill='x', pady=(0, 20))
         
         # Station dropdown
         station_frame = ttk.Frame(config_frame)
         station_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(station_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        ttk.Label(station_frame, text="Station Name:").pack(side='left', padx=(0, 10))
         self.station_var = tk.StringVar()
         station_combo = ttk.Combobox(station_frame, textvariable=self.station_var, values=STATION_CODES, width=20)
         station_combo.pack(side='left', padx=(0, 10))
         if STATION_CODES:
             station_combo.current(0)
+        
+        # Station code dropdown
+        code_frame = ttk.Frame(config_frame)
+        code_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(code_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        self.station_code_var = tk.StringVar()
+        code_combo = ttk.Combobox(code_frame, textvariable=self.station_code_var, values=STATION_CODE_ALIASES, width=20)
+        code_combo.pack(side='left', padx=(0, 10))
+        if STATION_CODE_ALIASES:
+            code_combo.current(0)
+        ttk.Label(code_frame, text="(e.g., MOZ304A)", font=('Arial', 8), foreground='gray').pack(side='left')
         
         # Year dropdown
         year_frame = ttk.Frame(config_frame)
@@ -306,7 +360,7 @@ class ImageOrganizerApp:
         time_combo.set("06")
         
         # Operations
-        ops_frame = ttk.LabelFrame(main_frame, text="Operations", padding="10")
+        ops_frame = ttk.LabelFrame(main_frame_padding, text="Operations", padding="10")
         ops_frame.pack(fill='x', pady=(0, 20))
         
         btn_frame = ttk.Frame(ops_frame)
@@ -317,7 +371,7 @@ class ImageOrganizerApp:
         ttk.Button(btn_frame, text="↩️ Restore Original Names", command=self.restore_original_names).pack(side='left', padx=5)
         
         # Info
-        info_frame = ttk.LabelFrame(main_frame, text="Information", padding="10")
+        info_frame = ttk.LabelFrame(main_frame_padding, text="Information", padding="10")
         info_frame.pack(fill='both', expand=True)
         
         info_text = """
@@ -344,20 +398,24 @@ class ImageOrganizerApp:
    - Multiple observation times
         """
         
-        info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
-        info_label.pack()
+        info_text_widget = scrolledtext.ScrolledText(info_frame, height=15, width=80, wrap=tk.WORD, state='disabled')
+        info_text_widget.pack(fill='both', expand=True)
+        info_text_widget.config(state='normal')
+        info_text_widget.insert('1.0', info_text.strip())
+        info_text_widget.config(state='disabled')
         
     def setup_audio_tab(self):
         """Audio ordering tab"""
-        main_frame = ttk.Frame(self.audio_tab, padding="10")
-        main_frame.pack(fill='both', expand=True)
+        main_frame = self.create_scrollable_frame(self.audio_tab)
+        main_frame_padding = ttk.Frame(main_frame, padding="10")
+        main_frame_padding.pack(fill='both', expand=True)
         
         # Title
-        title = ttk.Label(main_frame, text="🎤 Audio Ordering", style='Title.TLabel')
+        title = ttk.Label(main_frame_padding, text="🎤 Audio Ordering", style='Title.TLabel')
         title.pack(pady=(0, 20))
         
         # Folder selection
-        folder_frame = ttk.LabelFrame(main_frame, text="Select Folder", padding="10")
+        folder_frame = ttk.LabelFrame(main_frame_padding, text="Select Folder", padding="10")
         folder_frame.pack(fill='x', pady=(0, 20))
         
         self.audio_folder_var = tk.StringVar()
@@ -368,18 +426,29 @@ class ImageOrganizerApp:
         browse_btn.pack(side='right')
         
         # Configuration
-        config_frame = ttk.LabelFrame(main_frame, text="Station Configuration", padding="10")
+        config_frame = ttk.LabelFrame(main_frame_padding, text="Station Configuration", padding="10")
         config_frame.pack(fill='x', pady=(0, 20))
         
         # Station dropdown
         station_frame = ttk.Frame(config_frame)
         station_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(station_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        ttk.Label(station_frame, text="Station Name:").pack(side='left', padx=(0, 10))
         self.audio_station_var = tk.StringVar()
         station_combo = ttk.Combobox(station_frame, textvariable=self.audio_station_var, values=STATION_CODES, width=20)
         station_combo.pack(side='left', padx=(0, 10))
         if STATION_CODES:
             station_combo.current(0)
+        
+        # Station code dropdown
+        code_frame = ttk.Frame(config_frame)
+        code_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(code_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        self.audio_station_code_var = tk.StringVar()
+        code_combo = ttk.Combobox(code_frame, textvariable=self.audio_station_code_var, values=STATION_CODE_ALIASES, width=20)
+        code_combo.pack(side='left', padx=(0, 10))
+        if STATION_CODE_ALIASES:
+            code_combo.current(0)
+        ttk.Label(code_frame, text="(e.g., MOZ304A)", font=('Arial', 8), foreground='gray').pack(side='left')
         
         # Year dropdown
         year_frame = ttk.Frame(config_frame)
@@ -402,7 +471,7 @@ class ImageOrganizerApp:
         time_combo.set("06")
         
         # Audio controls
-        audio_frame = ttk.LabelFrame(main_frame, text="Audio Recording", padding="10")
+        audio_frame = ttk.LabelFrame(main_frame_padding, text="Audio Recording", padding="10")
         audio_frame.pack(fill='x', pady=(0, 20))
         
         # Recording status
@@ -423,7 +492,7 @@ class ImageOrganizerApp:
         ttk.Button(btn_frame, text="🔧 Install Speech Recognition", command=self.install_speech_recognition).pack(side='left', padx=5)
         
         # Detected numbers display
-        detected_frame = ttk.LabelFrame(main_frame, text="Detected Month Numbers", padding="10")
+        detected_frame = ttk.LabelFrame(main_frame_padding, text="Detected Month Numbers", padding="10")
         detected_frame.pack(fill='x', pady=(0, 20))
         
         self.detected_numbers_var = tk.StringVar(value="No numbers detected yet")
@@ -431,7 +500,7 @@ class ImageOrganizerApp:
         detected_label.pack()
         
         # Operations
-        ops_frame = ttk.LabelFrame(main_frame, text="Operations", padding="10")
+        ops_frame = ttk.LabelFrame(main_frame_padding, text="Operations", padding="10")
         ops_frame.pack(fill='x', pady=(0, 20))
         
         ops_btn_frame = ttk.Frame(ops_frame)
@@ -441,7 +510,7 @@ class ImageOrganizerApp:
         ttk.Button(ops_btn_frame, text="🔄 Clear Detection", command=self.clear_audio_detection).pack(side='left', padx=5)
         
         # Info
-        info_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="10")
+        info_frame = ttk.LabelFrame(main_frame_padding, text="Instructions", padding="10")
         info_frame.pack(fill='both', expand=True)
         
         info_text = """
@@ -473,20 +542,24 @@ class ImageOrganizerApp:
 - Apply ordering to rename correctly
         """
         
-        info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
-        info_label.pack()
+        info_text_widget = scrolledtext.ScrolledText(info_frame, height=15, width=80, wrap=tk.WORD, state='disabled')
+        info_text_widget.pack(fill='both', expand=True)
+        info_text_widget.config(state='normal')
+        info_text_widget.insert('1.0', info_text.strip())
+        info_text_widget.config(state='disabled')
         
     def setup_visual_tab(self):
         """Visual number ordering tab"""
-        main_frame = ttk.Frame(self.visual_tab, padding="10")
-        main_frame.pack(fill='both', expand=True)
+        main_frame = self.create_scrollable_frame(self.visual_tab)
+        main_frame_padding = ttk.Frame(main_frame, padding="10")
+        main_frame_padding.pack(fill='both', expand=True)
         
         # Title
-        title = ttk.Label(main_frame, text="🔢 Visual Number Ordering", style='Title.TLabel')
+        title = ttk.Label(main_frame_padding, text="🔢 Visual Number Ordering", style='Title.TLabel')
         title.pack(pady=(0, 20))
         
         # Folder selection
-        folder_frame = ttk.LabelFrame(main_frame, text="Select Folder", padding="10")
+        folder_frame = ttk.LabelFrame(main_frame_padding, text="Select Folder", padding="10")
         folder_frame.pack(fill='x', pady=(0, 20))
         
         self.visual_folder_var = tk.StringVar()
@@ -497,18 +570,29 @@ class ImageOrganizerApp:
         browse_btn.pack(side='right')
         
         # Configuration
-        config_frame = ttk.LabelFrame(main_frame, text="Station Configuration", padding="10")
+        config_frame = ttk.LabelFrame(main_frame_padding, text="Station Configuration", padding="10")
         config_frame.pack(fill='x', pady=(0, 20))
         
         # Station dropdown
         station_frame = ttk.Frame(config_frame)
         station_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(station_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        ttk.Label(station_frame, text="Station Name:").pack(side='left', padx=(0, 10))
         self.visual_station_var = tk.StringVar()
         station_combo = ttk.Combobox(station_frame, textvariable=self.visual_station_var, values=STATION_CODES, width=20)
         station_combo.pack(side='left', padx=(0, 10))
         if STATION_CODES:
             station_combo.current(0)
+        
+        # Station code dropdown
+        code_frame = ttk.Frame(config_frame)
+        code_frame.pack(fill='x', pady=(0, 10))
+        ttk.Label(code_frame, text="Station Code:").pack(side='left', padx=(0, 10))
+        self.visual_station_code_var = tk.StringVar()
+        code_combo = ttk.Combobox(code_frame, textvariable=self.visual_station_code_var, values=STATION_CODE_ALIASES, width=20)
+        code_combo.pack(side='left', padx=(0, 10))
+        if STATION_CODE_ALIASES:
+            code_combo.current(0)
+        ttk.Label(code_frame, text="(e.g., MOZ304A)", font=('Arial', 8), foreground='gray').pack(side='left')
         
         # Year dropdown
         year_frame = ttk.Frame(config_frame)
@@ -531,13 +615,13 @@ class ImageOrganizerApp:
         time_combo.set("06")
         
         # Operations
-        ops_frame = ttk.LabelFrame(main_frame, text="Operations", padding="10")
+        ops_frame = ttk.LabelFrame(main_frame_padding, text="Operations", padding="10")
         ops_frame.pack(fill='x', pady=(0, 20))
         
         ttk.Button(ops_frame, text="🔢 Open Visual Selector", command=self.open_visual_selector).pack(pady=10)
         
         # Info
-        info_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="10")
+        info_frame = ttk.LabelFrame(main_frame_padding, text="Instructions", padding="10")
         info_frame.pack(fill='both', expand=True)
         
         info_text = """
@@ -578,8 +662,82 @@ class ImageOrganizerApp:
 - Precise manual control
         """
         
-        info_label = ttk.Label(info_frame, text=info_text.strip(), justify='left')
-        info_label.pack()
+        info_text_widget = scrolledtext.ScrolledText(info_frame, height=15, width=80, wrap=tk.WORD, state='disabled')
+        info_text_widget.pack(fill='both', expand=True)
+        info_text_widget.config(state='normal')
+        info_text_widget.insert('1.0', info_text.strip())
+        info_text_widget.config(state='disabled')
+    
+    def setup_simple_rename_tab(self):
+        """Simple 1-12 renaming tab"""
+        main_frame = self.create_scrollable_frame(self.simple_rename_tab)
+        main_frame_padding = ttk.Frame(main_frame, padding="10")
+        main_frame_padding.pack(fill='both', expand=True)
+        
+        # Title
+        title = ttk.Label(main_frame_padding, text="🔢 Simple 1-12 Rename", style='Title.TLabel')
+        title.pack(pady=(0, 20))
+        
+        # Folder selection
+        folder_frame = ttk.LabelFrame(main_frame_padding, text="Select Folder", padding="10")
+        folder_frame.pack(fill='x', pady=(0, 20))
+        
+        self.simple_folder_var = tk.StringVar()
+        folder_entry = ttk.Entry(folder_frame, textvariable=self.simple_folder_var, width=70)
+        folder_entry.pack(side='left', fill='x', expand=True, padx=(0, 10))
+        
+        browse_btn = ttk.Button(folder_frame, text="Browse", command=self.browse_simple_folder)
+        browse_btn.pack(side='right')
+        
+        # Operations
+        ops_frame = ttk.LabelFrame(main_frame_padding, text="Operations", padding="10")
+        ops_frame.pack(fill='x', pady=(0, 20))
+        
+        ttk.Button(ops_frame, text="🔢 Rename to 1-12", command=self.simple_rename_images).pack(pady=10)
+        
+        # Info
+        info_frame = ttk.LabelFrame(main_frame_padding, text="Instructions", padding="10")
+        info_frame.pack(fill='both', expand=True)
+        
+        info_text = """
+🔢 Simple 1-12 Rename Instructions:
+
+1. Select a folder containing images
+2. Click "Rename to 1-12"
+3. Images will be renamed sequentially:
+   - First image → 1.jpg (or 1.png, etc.)
+   - Second image → 2.jpg
+   - Third image → 3.jpg
+   - And so on...
+
+💡 Features:
+- Renames images in alphabetical order
+- Preserves original file extensions
+- Works with any number of images (1-12 or more)
+- Simple and fast
+
+📋 Example:
+Before:
+  - IMG_001.jpg
+  - IMG_002.jpg
+  - IMG_003.jpg
+
+After:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+
+🎯 Perfect for:
+- Preparing images for the Station Alias feature
+- Quick sequential numbering
+- Organizing images by month order
+        """
+        
+        info_text_widget = scrolledtext.ScrolledText(info_frame, height=15, width=80, wrap=tk.WORD, state='disabled')
+        info_text_widget.pack(fill='both', expand=True)
+        info_text_widget.config(state='normal')
+        info_text_widget.insert('1.0', info_text.strip())
+        info_text_widget.config(state='disabled')
         
     def setup_settings_tab(self):
         """Settings tab"""
@@ -861,8 +1019,13 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
             return
         
         station = self.station_var.get()
+        station_code = self.station_code_var.get()
         year = int(self.year_var.get())
         obs_time = self.obs_time_var.get()
+        
+        if not station_code:
+            messagebox.showerror("Error", "Please enter a station code (e.g., MOZ304A)")
+            return
         
         # Create preview window
         preview_window = tk.Toplevel(self.root)
@@ -879,7 +1042,8 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
         
         preview_text.insert(tk.END, f"📁 Folder: {folder_path.name}\n")
         preview_text.insert(tk.END, f"🏢 Station: {station}\n")
-        preview_text.insert(tk.END, f"📅 Year: {year}\n")
+        preview_text.insert(tk.END, f"🔖 Code: {station_code}\n")
+        preview_text.insert(tk.END, f" Year: {year}\n")
         preview_text.insert(tk.END, f"⏰ Time: {obs_time}\n")
         
         if missing_months:
@@ -901,7 +1065,7 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
         
         for img_path, month in sorted(file_to_month.items(), key=lambda x: x[1]):
             days_in_month = calendar.monthrange(year, month)[1]
-            new_name = f"{station}-{year}{month:02d}{days_in_month:02d}{obs_time}{img_path.suffix}"
+            new_name = f"{station}-{station_code}-{year}{month:02d}{days_in_month:02d}{obs_time}{img_path.suffix}"
             preview_text.insert(tk.END, f"{img_path.name:20s} → Month {month:02d} → {new_name}\n")
         
         preview_text.config(state='disabled')
@@ -917,8 +1081,13 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
             return
         
         station = self.station_var.get()
+        station_code = self.station_code_var.get()
         year = int(self.year_var.get())
         obs_time = self.obs_time_var.get()
+        
+        if not station_code:
+            messagebox.showerror("Error", "Please enter a station code (e.g., MOZ304A)")
+            return
         
         if self.is_processing:
             messagebox.showwarning("Warning", "Another operation is in progress")
@@ -932,8 +1101,8 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
                 # Import and run alias functionality
                 import Alias
                 self.log_message(f"Creating station aliases in: {folder}")
-                self.log_message(f"Station: {station}, Year: {year}, Time: {obs_time}")
-                Alias.rename_images(folder, station, year, obs_time)
+                self.log_message(f"Station: {station}, Code: {station_code}, Year: {year}, Time: {obs_time}")
+                Alias.rename_images(folder, station, station_code, year, obs_time)
                 self.log_message("Station aliases created!")
                 messagebox.showinfo("Success", "Station aliases created successfully!")
             except Exception as e:
@@ -1043,8 +1212,13 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
             return
         
         station = self.audio_station_var.get()
+        station_code = self.audio_station_code_var.get()
         year = int(self.audio_year_var.get())
         obs_time = self.audio_obs_time_var.get()
+        
+        if not station_code:
+            messagebox.showerror("Error", "Please enter a station code (e.g., MOZ304A)")
+            return
         
         if self.is_processing:
             messagebox.showwarning("Warning", "Another operation is in progress")
@@ -1055,7 +1229,7 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
         
         def run_apply():
             try:
-                success, result = self.audio_orderer.apply_ordering(station, year, obs_time)
+                success, result = self.audio_orderer.apply_ordering(station, station_code, year, obs_time)
                 
                 if success:
                     self.log_message("✅ Audio ordering applied successfully!")
@@ -1120,8 +1294,13 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
             return
         
         station = self.visual_station_var.get()
+        station_code = self.visual_station_code_var.get()
         year = int(self.visual_year_var.get())
         obs_time = self.visual_obs_time_var.get()
+        
+        if not station_code:
+            messagebox.showerror("Error", "Please enter a station code (e.g., MOZ304A)")
+            return
         
         try:
             import visual_number_order
@@ -1132,7 +1311,7 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
                     self.log_message(f"  {line}")
                 messagebox.showinfo("Success", "Visual ordering applied successfully!")
             
-            orderer = visual_number_order.VisualNumberOrder(folder, station, year, obs_time)
+            orderer = visual_number_order.VisualNumberOrder(folder, station, station_code, year, obs_time)
             orderer.create_selection_window(callback)
             
             self.log_message(f"🔢 Visual selector opened for {folder}")
@@ -1141,6 +1320,78 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
             messagebox.showerror("Error", "Visual ordering module not available")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open visual selector: {e}")
+    
+    def browse_simple_folder(self):
+        """Browse for simple rename folder"""
+        folder = filedialog.askdirectory()
+        if folder:
+            self.simple_folder_var.set(folder)
+    
+    def simple_rename_images(self):
+        """Rename images sequentially as 1.jpg, 2.jpg, etc."""
+        folder = self.simple_folder_var.get()
+        if not folder or not Path(folder).exists():
+            messagebox.showerror("Error", "Please select a valid folder")
+            return
+        
+        if self.is_processing:
+            messagebox.showwarning("Warning", "Another operation is in progress")
+            return
+        
+        self.is_processing = True
+        self.status_var.set("Renaming images...")
+        
+        def run_rename():
+            try:
+                folder_path = Path(folder)
+                
+                # Get all image files sorted alphabetically
+                images = sorted(folder_path.glob("*.*"), key=lambda x: x.name.lower())
+                
+                # Filter to only image files
+                image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
+                images = [img for img in images if img.suffix.lower() in image_extensions]
+                
+                if not images:
+                    self.log_message("❌ No images found in folder")
+                    messagebox.showerror("Error", "No images found in the selected folder")
+                    return
+                
+                self.log_message(f"📁 Renaming {len(images)} images in: {folder}")
+                
+                # Rename images sequentially
+                renamed_count = 0
+                for i, img_path in enumerate(images, start=1):
+                    new_name = f"{i}{img_path.suffix}"
+                    new_path = folder_path / new_name
+                    
+                    # Skip if already has the correct name
+                    if img_path.name == new_name:
+                        self.log_message(f"  ✓ {img_path.name} (already correct)")
+                        continue
+                    
+                    # Handle name conflicts by using temp names
+                    if new_path.exists():
+                        temp_name = f"temp_{i}_{img_path.name}"
+                        temp_path = folder_path / temp_name
+                        img_path.rename(temp_path)
+                        img_path = temp_path
+                    
+                    img_path.rename(new_path)
+                    self.log_message(f"  {img_path.name} → {new_name}")
+                    renamed_count += 1
+                
+                self.log_message(f"✅ Successfully renamed {renamed_count} images!")
+                messagebox.showinfo("Success", f"Renamed {renamed_count} images to sequential numbers (1-{len(images)})")
+                
+            except Exception as e:
+                self.log_message(f"❌ Error: {e}")
+                messagebox.showerror("Error", f"Failed to rename images: {e}")
+            finally:
+                self.is_processing = False
+                self.status_var.set("Ready")
+        
+        threading.Thread(target=run_rename, daemon=True).start()
 
 def main():
     """Main entry point"""
