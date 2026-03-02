@@ -1,48 +1,16 @@
-# Image files
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
-*.webp
-*.JPG
-*.JPEG
-*.PNG
-*.GIF
-*.BMP
-*.TIFF
-*.WEBP
-
-# Document files
-*.pdf
-*.doc
-*.docx
-*.xls
-*.xlsx
-*.ppt
-*.pptx
-*.txt
-*.csv
-
-# Video files
-*.mp4
-*.avi
-*.mov
-*.mkv
-
-# Archive files
-*.zip
-*.rar
-*.7z
-*.tar
-*.gz
+# Build artifacts
+build/
+dist/
+installer/
+*.spec
+!.spec
 
 # Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
 
 # Environment
 venv/
@@ -66,5 +34,5 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Keep only Python scripts
-!*.py
+# Keep Python scripts
+*.py
