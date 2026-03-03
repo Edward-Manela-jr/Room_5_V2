@@ -10,16 +10,56 @@ from PIL import Image, ImageTk
 from pathlib import Path
 import os
 import shutil
+import datetime
+
+
+# Station codes for dropdown
+STATION_CODES = [
+    "CHIPAT01", "CHINSA01", "CHIPEPO01", "CHOMA001", "ISOKA001",
+    "KABOMP01", "KABWE001", "KABWE002", "KAFIRO01", "KAFUE001",
+    "KALABO01", "KAOMA001", "KASAMA01", "KASEMP01", "KAWAMB01",
+    "LIVING01", "LUNDAZ01", "LUSAKA01", "LUSAKA02", "MAGOYE01",
+    "MANSA001", "MANSA002", "MBALA001", "MFUWE001", "MISAMFO1",
+    "MKUSHI01", "MONGU002", "MPIKA001", "MSEKER01", "MTMAKU01",
+    "MUMBWA01", "MPULUNGU", "MWINIL01", "NDOLA001", "PETAUK01",
+    "SAMFYA001", "SENANG01", "SERENJO1", "SIMON001", "SESHEK01",
+    "SOLWEZ01", "ZAMBEZ01"
+]
+
+# Station code aliases for dropdown
+STATION_CODE_ALIASES = [
+    "MOZ304A", "MOZ305A", "MOZ306A", "MOZ307A", "MOZ308A",
+    "MOZ309A", "MOZ310A", "MOZ311A", "MOZ312A", "MOZ313A",
+    "MOZ314A", "MOZ315A", "MOZ316A", "MOZ317A", "MOZ318A",
+    "MOZ319A", "MOZ320A", "MOZ321A", "MOZ322A", "MOZ323A",
+    "MOZ324A", "MOZ325A", "MOZ326A", "MOZ327A", "MOZ328A",
+    "MOZ329A", "MOZ330A", "MOZ331A", "MOZ332A", "MOZ333A",
+    "MOZ334A", "MOZ335A", "MOZ336A", "MOZ337A", "MOZ338A",
+    "MOZ339A", "MOZ340A", "MOZ341A", "MOZ342A", "MOZ343A",
+    "MOZ344A", "MOZ345A"
+]
+
+# Years for dropdown (1970-2026)
+YEARS = list(range(1970, 2027))
+
+# Observation times for dropdown
+OBSERVATION_TIMES = ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18"]
 
 
 class MonthSelector:
-    def __init__(self, parent):
+    def __init__(self, parent, station="", station_code="", year="", obs_time="06"):
         self.parent = parent
         self.folder_path = None
         self.image_files = []
         self.current_index = 0
         self.selected_months = {}  # {index: month_number}
         self.photo_images = []  # Keep references to prevent garbage collection
+        
+        # Station configuration
+        self.station = station
+        self.station_code = station_code
+        self.year = year
+        self.obs_time = obs_time
         
         self.create_window()
     
@@ -45,12 +85,12 @@ class MonthSelector:
         self.set_controls_state('disabled')
     
     def create_header(self):
-        """Create header with folder selection"""
+        """Create header with folder selection and station config"""
         header_frame = tk.Frame(self.window, bg='#2c3e50', pady=10)
         header_frame.grid(row=0, column=0, sticky='ew')
         header_frame.columnconfigure(1, weight=1)
         
-        # Folder label
+        # Row 0: Folder selection
         tk.Label(header_frame, text="📁 Folder:", bg='#2c3e50', fg='white', 
                 font=('Arial', 11)).grid(row=0, column=0, padx=10, sticky='w')
         
@@ -59,12 +99,58 @@ class MonthSelector:
                                     anchor='w')
         self.folder_label.grid(row=0, column=1, padx=10, sticky='ew')
         
-        # Browse button
         self.browse_btn = tk.Button(header_frame, text="Browse", 
                                    command=self.browse_folder,
                                    font=('Arial', 10), bg='#3498db', fg='white',
                                    relief='flat', padx=15)
         self.browse_btn.grid(row=0, column=2, padx=10)
+        
+        # Row 1: Station Configuration
+        config_frame = tk.Frame(header_frame, bg='#2c3e50')
+        config_frame.grid(row=1, column=0, columnspan=3, pady=10, sticky='ew')
+        config_frame.columnconfigure(1, weight=1)
+        config_frame.columnconfigure(3, weight=1)
+        config_frame.columnconfigure(5, weight=1)
+        
+        # Station Name
+        tk.Label(config_frame, text="Station:", bg='#2c3e50', fg='white', 
+                font=('Arial', 10)).grid(row=0, column=0, padx=10, sticky='w')
+        self.station_var = tk.StringVar(value=self.station)
+        station_combo = ttk.Combobox(config_frame, textvariable=self.station_var, 
+                                      values=STATION_CODES, width=15, state='readonly')
+        station_combo.grid(row=0, column=1, padx=10, sticky='w')
+        if STATION_CODES:
+            station_combo.current(0)
+        
+        # Station Code
+        tk.Label(config_frame, text="Code:", bg='#2c3e50', fg='white', 
+                font=('Arial', 10)).grid(row=0, column=2, padx=10, sticky='w')
+        self.station_code_var = tk.StringVar(value=self.station_code)
+        code_combo = ttk.Combobox(config_frame, textvariable=self.station_code_var, 
+                                  values=STATION_CODE_ALIASES, width=12, state='readonly')
+        code_combo.grid(row=0, column=3, padx=10, sticky='w')
+        if STATION_CODE_ALIASES:
+            code_combo.current(0)
+        
+        # Year
+        tk.Label(config_frame, text="Year:", bg='#2c3e50', fg='white', 
+                font=('Arial', 10)).grid(row=0, column=4, padx=10, sticky='w')
+        self.year_var = tk.StringVar(value=self.year)
+        year_combo = ttk.Combobox(config_frame, textvariable=self.year_var, 
+                                  values=YEARS, width=6, state='readonly')
+        year_combo.grid(row=0, column=5, padx=10, sticky='w')
+        current_year = datetime.datetime.now().year
+        if current_year in YEARS:
+            year_combo.set(str(current_year))
+        
+        # Observation Time
+        tk.Label(config_frame, text="Time:", bg='#2c3e50', fg='white', 
+                font=('Arial', 10)).grid(row=0, column=6, padx=10, sticky='w')
+        self.obs_time_var = tk.StringVar(value=self.obs_time)
+        time_combo = ttk.Combobox(config_frame, textvariable=self.obs_time_var, 
+                                   values=OBSERVATION_TIMES, width=4, state='readonly')
+        time_combo.grid(row=0, column=7, padx=10, sticky='w')
+        time_combo.set("06")
     
     def create_image_view(self):
         """Create image preview area with cropped view"""
@@ -415,10 +501,23 @@ class MonthSelector:
             messagebox.showwarning("No Selections", "Please select months for at least one image.")
             return
         
+        # Get current configuration from UI
+        station_code = self.station_code_var.get()
+        year = self.year_var.get()
+        obs_time = self.obs_time_var.get()
+        
+        if not station_code:
+            messagebox.showwarning("Missing Configuration", "Please select a station code.")
+            return
+        
+        if not year:
+            messagebox.showwarning("Missing Configuration", "Please select a year.")
+            return
+        
         # Confirm rename
         count = len(self.selected_months)
         if not messagebox.askyesno("Confirm Rename", 
-                                   f"Rename {count} file(s) based on selected months?"):
+                                   f"Rename {count} file(s) to format: {station_code}-{year}MMDD{obs_time}.ext?"):
             return
         
         renamed = 0
@@ -433,14 +532,16 @@ class MonthSelector:
                 # Get file extension
                 ext = img_path.suffix
                 
-                # Create new filename with month
-                new_name = f"{month:02d}{ext}"
+                # Create new filename with full station format
+                # Format: STATION-YEARMONTHDAY TIME.extension
+                # Since we don't have day, use 01 as placeholder
+                new_name = f"{station_code}-{year}{month:02d}01{obs_time}{ext}"
                 new_path = img_path.parent / new_name
                 
                 # Handle existing files
                 counter = 1
                 while new_path.exists() and new_path != img_path:
-                    new_name = f"{month:02d}_{counter}{ext}"
+                    new_name = f"{station_code}-{year}{month:02d}01{obs_time}_{counter}{ext}"
                     new_path = img_path.parent / new_name
                     counter += 1
                 
@@ -459,14 +560,14 @@ class MonthSelector:
                 error_msg += f"\n... and {len(errors) - 10} more"
             messagebox.showwarning("Rename Complete with Errors", error_msg)
         else:
-            messagebox.showinfo("Success", f"Successfully renamed {renamed} files!")
+            messagebox.showinfo("Success", f"Successfully renamed {renamed} files!\n\nFormat: {station_code}-{year}MMDD{obs_time}.ext")
         
         # Reload images
         self.status_label.config(text=f"Renamed {renamed} files")
         self.load_images()
 
 
-def open_month_selector(parent):
+def open_month_selector(parent, station="", station_code="", year="", obs_time="06"):
     """Open the month selector window"""
-    selector = MonthSelector(parent)
+    selector = MonthSelector(parent, station, station_code, year, obs_time)
     return selector.window
