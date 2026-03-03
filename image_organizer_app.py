@@ -44,8 +44,8 @@ STATION_CODE_ALIASES = [
     "MOZ344A", "MOZ345A"
 ]
 
-# Years for dropdown (1970-2026)
-YEARS = list(range(1970, 2027))
+# Years for dropdown (1900-2026)
+YEARS = list(range(1900, 2027))
 
 # Observation times for dropdown
 OBSERVATION_TIMES = ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18"]

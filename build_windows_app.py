@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Build script for Windows Image Organizer App
 Creates a standalone executable and installer
@@ -9,6 +10,12 @@ import sys
 import subprocess
 import shutil
 from pathlib import Path
+
+# Fix Windows console encoding for emoji output
+if sys.platform == 'win32':
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
 def install_requirements():
     """Install required packages for building"""
@@ -134,7 +141,7 @@ StringFileInfo(
     StringStruct(u'FileDescription', u'Image Organizer Pro - Professional Image Organization Tool'),
     StringStruct(u'FileVersion', u'1.0.0'),
     StringStruct(u'InternalName', u'ImageOrganizerPro'),
-    StringStruct(u'LegalCopyright', u'Copyright © 2026 Edward Manela Jr'),
+    StringStruct(u'LegalCopyright', u'Copyright (c) 2026 Edward Manela Jr'),
     StringStruct(u'OriginalFilename', u'ImageOrganizerPro.exe'),
     StringStruct(u'ProductName', u'Image Organizer Pro'),
     StringStruct(u'ProductVersion', u'1.0.0')])
@@ -154,12 +161,10 @@ def build_executable():
     print("🔨 Building executable with PyInstaller...")
     
     try:
-        # Run PyInstaller
+        # Run PyInstaller - use the spec file only, no additional flags
         result = subprocess.run([
             sys.executable, '-m', 'PyInstaller', 
             '--clean', 
-            '--onefile', 
-            '--windowed',
             'image_organizer.spec'
         ], check=True, capture_output=True, text=True)
         

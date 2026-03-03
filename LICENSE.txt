@@ -1,34 +1,21 @@
-Image Organizer Pro - Proprietary License Agreement
+Image Organizer Pro - License Agreement
 
-Copyright (c) 2026 Edward Manela Jr. All Rights Reserved.
+Copyright (c) 2026 Edward Manela Jr
 
-RESTRICTED USE LICENSE
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-This software and associated documentation files (the "Software") is proprietary
-and confidential. The Software is provided exclusively for authorized use within
-Room 5 of ZMD (Zambia Meteorological Department) for data
-organization and meteorological purposes only.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-PERMITTED USE:
-- The Software may only be used for non-commercial purposes
-- Use is strictly limited to Room 5 of ZMD for data organization activities
-- Use is restricted to authorized personnel of Room 5 of ZMD
-- No commercial use, reproduction, or distribution is permitted
-
-PROHIBITED USE:
-- The Software may not be copied, modified, distributed, or sublicensed
-- The Software is not permitted for use by any individual outside the
-  authorized Room 5 of ZMD operations
-- Unauthorized possession, use, or distribution of the Software is strictly
-  prohibited
-
-CONSEQUENCES OF VIOLATION:
-Unauthorized use, reproduction, distribution, or possession of this Software
-constitutes a material breach of this License Agreement and may result in civil
-and criminal liability, including but not limited to legal proceedings and
-appropriate legal action to protect intellectual property rights.
-
-DISCLAIMER:
-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED. THE AUTHOR DISCLAIMS ALL WARRANTIES, INCLUDING but not limited to
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -29,7 +29,7 @@ TOWNS = [
     "Choma", "Kaoma", "Mansa", "Mbala", "Mfuwe", "Mongu"
 ]
 
-YEARS = list(range(1970, 2026))  # 1970-2025
+YEARS = list(range(1900, 2026))  # 1900-2025
 
 def create_random_image(width, height, color):
     """Create a simple random image"""

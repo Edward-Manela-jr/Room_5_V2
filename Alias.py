@@ -22,7 +22,7 @@ def parse_missing_months(folder_name):
             months.append(int(m))
     return months
 
-def rename_images(folder, station, year, obs_time):
+def rename_images(folder, station, station_code, year, obs_time):
     folder = Path(folder)
 
     # Detect missing months
@@ -57,8 +57,9 @@ def rename_images(folder, station, year, obs_time):
         days_in_month = calendar.monthrange(year, month)[1]
         suffix = img_path.suffix
 
-        # Build final name
-        new_name = f"{station}-{year}{month:02d}{days_in_month:02d}{obs_time}{suffix}"
+        # Build final name (use station code like MOZ304A if provided, otherwise use station)
+        station_id = station_code if station_code else station
+        new_name = f"{station_id}-{year}{month:02d}{days_in_month:02d}{obs_time}{suffix}"
         new_path = folder / new_name
 
         img_path.rename(new_path)
@@ -67,16 +68,18 @@ def rename_images(folder, station, year, obs_time):
     print("\n✅ DONE — Images renamed successfully!")
 
 def main():
-    if len(sys.argv) >= 4:
+    if len(sys.argv) >= 5:
         # Command line mode
         folder = sys.argv[1]
         station = sys.argv[2]
-        year = int(sys.argv[3])
-        obs_time = sys.argv[4] if len(sys.argv) > 4 else "06"
+        station_code = sys.argv[3]
+        year = int(sys.argv[4])
+        obs_time = sys.argv[5] if len(sys.argv) > 5 else "06"
     else:
         # Interactive mode
         folder = input("Enter folder path: ").strip()
-        station = input("Enter station code: ").strip()
+        station = input("Enter station name: ").strip()
+        station_code = input("Enter station code (e.g., MOZ304A): ").strip()
         year = int(input("Enter year: ").strip())
         obs_time = input("Enter observation time (HH, default 06): ").strip() or "06"
     

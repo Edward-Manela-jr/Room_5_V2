@@ -11,7 +11,7 @@ AllowNoIcons=yes
 LicenseFile=LICENSE.txt
 OutputDir=installer
 OutputBaseFilename=ImageOrganizerProSetup
-; SetupIconFile removed (icon.ico not present). Add this line back if you provide an icon.ico
+SetupIconFile=icon.ico
 Compression=lzma
 SolidCompression=yes
 

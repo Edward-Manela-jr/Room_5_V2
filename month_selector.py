@@ -11,6 +11,7 @@ from pathlib import Path
 import os
 import shutil
 import datetime
+import calendar
 
 
 # Station codes for dropdown
@@ -39,8 +40,8 @@ STATION_CODE_ALIASES = [
     "MOZ344A", "MOZ345A"
 ]
 
-# Years for dropdown (1970-2026)
-YEARS = list(range(1970, 2027))
+# Years for dropdown (1900-2026)
+YEARS = list(range(1900, 2027))
 
 # Observation times for dropdown
 OBSERVATION_TIMES = ["06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18"]
@@ -54,6 +55,9 @@ class MonthSelector:
         self.current_index = 0
         self.selected_months = {}  # {index: month_number}
         self.photo_images = []  # Keep references to prevent garbage collection
+        
+        # Zoom factor (0.5x to 3.0x)
+        self.zoom_factor = 1.0
         
         # Station configuration
         self.station = station
@@ -230,6 +234,33 @@ class MonthSelector:
         tk.Button(nav_frame, text="Go", command=self.jump_to_image,
                  font=('Arial', 10), bg='#3498db', fg='white',
                  relief='flat', padx=10).pack(side='left')
+        
+        # Zoom slider
+        zoom_frame = tk.Frame(control_frame, bg='#ecf0f1')
+        zoom_frame.pack(pady=(10, 0))
+        
+        tk.Label(zoom_frame, text="🔍 Zoom:", bg='#ecf0f1', 
+                font=('Arial', 10)).pack(side='left', padx=(0, 10))
+        
+        self.zoom_slider = tk.Scale(zoom_frame, from_=0.5, to=3.0, resolution=0.1,
+                                     orient='horizontal', length=200,
+                                     command=self.on_zoom_changed,
+                                     bg='#ecf0f1', troughcolor='#bdc3c7',
+                                     activebackground='#3498db', font=('Arial', 9))
+        self.zoom_slider.set(1.0)
+        self.zoom_slider.pack(side='left')
+        
+        self.zoom_label = tk.Label(zoom_frame, text="1.0x", bg='#ecf0f1',
+                                   fg='#2c3e50', font=('Arial', 10, 'bold'), width=5)
+        self.zoom_label.pack(side='left', padx=10)
+    
+    def on_zoom_changed(self, value):
+        """Handle zoom slider changes"""
+        self.zoom_factor = float(value)
+        self.zoom_label.config(text=f"{self.zoom_factor:.1f}x")
+        # Refresh the image with new zoom level
+        if self.image_files and self.current_index < len(self.image_files):
+            self.show_image()
     
     def create_month_buttons(self):
         """Create month selection buttons (1-12)"""
@@ -349,9 +380,27 @@ class MonthSelector:
             self.apply_btn.config(state='normal', bg='#27ae60')
     
     def crop_top_left_half(self, image_path, target_size=(400, 300)):
-        """Crop the top-left half of an image"""
+        """Crop the top-left half of an image with EXIF orientation handling"""
         try:
+            from PIL import ExifTags
+            
             with Image.open(image_path) as img:
+                # Handle EXIF orientation
+                try:
+                    exif = img.getexif()
+                    if exif:
+                        for tag, value in exif.items():
+                            if ExifTags.TAGS.get(tag) == 'Orientation':
+                                if value == 3:
+                                    img = img.rotate(180, expand=True)
+                                elif value == 6:
+                                    img = img.rotate(270, expand=True)
+                                elif value == 8:
+                                    img = img.rotate(90, expand=True)
+                                break
+                except Exception:
+                    pass  # Ignore EXIF errors
+                
                 # Get original dimensions
                 width, height = img.size
                 
@@ -371,7 +420,7 @@ class MonthSelector:
             return None
     
     def show_image(self):
-        """Display the current image with cropped preview"""
+        """Display the current image with cropped preview and zoom"""
         if not self.image_files or self.current_index >= len(self.image_files):
             return
         
@@ -386,6 +435,12 @@ class MonthSelector:
         cropped_img = self.crop_top_left_half(image_path)
         
         if cropped_img:
+            # Apply zoom factor - resize the cropped image
+            if self.zoom_factor != 1.0:
+                new_width = int(cropped_img.width * self.zoom_factor)
+                new_height = int(cropped_img.height * self.zoom_factor)
+                cropped_img = cropped_img.resize((new_width, new_height), Image.LANCZOS)
+            
             # Convert to PhotoImage
             self.current_photo = ImageTk.PhotoImage(cropped_img)
             self.photo_images.append(self.current_photo)  # Keep reference
@@ -517,7 +572,11 @@ class MonthSelector:
         
         # Confirm rename
         count = len(self.selected_months)
-        filename_example = f"{station}-{station_code}-{year}{self.selected_months[sorted(self.selected_months.keys())[0]]:02d}01{obs_time}.ext" if self.selected_months else "STATION-STATIONCODE-YEARMONTHDAY TIME.ext"
+        # Calculate actual days in month for the example
+        first_month = self.selected_months[sorted(self.selected_months.keys())[0]]
+        year_int = int(year)
+        days_in_first_month = calendar.monthrange(year_int, first_month)[1]
+        filename_example = f"{station}-{station_code}-{year}{first_month:02d}{days_in_first_month:02d}{obs_time}.ext" if self.selected_months else "STATION-STATIONCODE-YEARMONTHDAY TIME.ext"
         if not messagebox.askyesno("Confirm Rename", 
                                    f"Rename {count} file(s)?\n\nExample: {filename_example}"):
             return
@@ -534,15 +593,19 @@ class MonthSelector:
                 # Get file extension
                 ext = img_path.suffix
                 
+                # Calculate actual days in the selected month
+                year_int = int(year)
+                days_in_month = calendar.monthrange(year_int, month)[1]
+                
                 # Create new filename with full format: STATION-STATIONCODE-YEARMONTHDAY TIME.ext
-                # Example: CHIPAT01-MOZ304A-2026010106.jpg
-                new_name = f"{station}-{station_code}-{year}{month:02d}01{obs_time}{ext}"
+                # Example: CHIPAT01-MOZ304A-2026013106.jpg (31 days in January)
+                new_name = f"{station}-{station_code}-{year}{month:02d}{days_in_month:02d}{obs_time}{ext}"
                 new_path = img_path.parent / new_name
                 
                 # Handle existing files
                 counter = 1
                 while new_path.exists() and new_path != img_path:
-                    new_name = f"{station}-{station_code}-{year}{month:02d}01{obs_time}_{counter}{ext}"
+                    new_name = f"{station}-{station_code}-{year}{month:02d}{days_in_month:02d}{obs_time}_{counter}{ext}"
                     new_path = img_path.parent / new_name
                     counter += 1
                 
