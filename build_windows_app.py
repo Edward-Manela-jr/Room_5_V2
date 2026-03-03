@@ -45,6 +45,7 @@ a = Analysis(
         ('fix_image_orientation.py', '.'),
         ('fix_all_rotations.py', '.'),
         ('interactive_rotation_cli.py', '.'),
+        ('month_selector.py', '.'),
     ],
     hiddenimports=[
         'PIL._tkinter_finder',

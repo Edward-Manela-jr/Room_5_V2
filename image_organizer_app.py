@@ -140,7 +140,12 @@ class ImageOrganizerApp:
         notebook.add(self.simple_rename_tab, text='🔢 1-12 Rename')
         self.setup_simple_rename_tab()
         
-        # Tab 7: Settings
+        # Tab 8: Month Selector with Cropped Previews
+        self.month_selector_tab = ttk.Frame(notebook)
+        notebook.add(self.month_selector_tab, text='🖼️ Month Selector')
+        self.setup_month_selector_tab()
+        
+        # Tab 9: Settings
         self.settings_tab = ttk.Frame(notebook)
         notebook.add(self.settings_tab, text='⚙️ Settings')
         self.setup_settings_tab()
@@ -739,6 +744,78 @@ After:
         info_text_widget.insert('1.0', info_text.strip())
         info_text_widget.config(state='disabled')
         
+    def setup_month_selector_tab(self):
+        """Month selector tab with cropped previews"""
+        main_frame = self.create_scrollable_frame(self.month_selector_tab)
+        main_frame_padding = ttk.Frame(main_frame, padding="10")
+        main_frame_padding.pack(fill='both', expand=True)
+        
+        # Title
+        title = ttk.Label(main_frame_padding, text="🖼️ Month Selector with Cropped Previews", style='Title.TLabel')
+        title.pack(pady=(0, 20))
+        
+        # Description
+        desc_frame = ttk.LabelFrame(main_frame_padding, text="About", padding="10")
+        desc_frame.pack(fill='x', pady=(0, 20))
+        
+        desc_text = """
+ 🖼️ Browse folder, view cropped previews (top-left half), and select month numbers to rename files.
+ 
+ Features:
+ • Browse and select a folder with images
+ • View cropped previews (top-left half) of each image
+ • Scroll through images within the app
+ • Click month buttons (1-12) to select the month for each image
+ • Rename files based on selected months
+        """
+        
+        desc_label = ttk.Label(desc_frame, text=desc_text.strip(), justify='left')
+        desc_label.pack()
+        
+        # Open button
+        ops_frame = ttk.LabelFrame(main_frame_padding, text="Open Month Selector", padding="10")
+        ops_frame.pack(fill='x', pady=(0, 20))
+        
+        ttk.Button(ops_frame, text="🖼️ Open Month Selector", 
+                 command=self.open_month_selector).pack(pady=10)
+        
+        # Info
+        info_frame = ttk.LabelFrame(main_frame_padding, text="Instructions", padding="10")
+        info_frame.pack(fill='both', expand=True)
+        
+        info_text = """
+ 🖼️ Month Selector Instructions:
+ 
+ 1. Click "Open Month Selector" to launch the tool
+ 2. Browse and select a folder with images
+ 3. Use Previous/Next buttons or scroll to navigate images
+ 4. The app shows cropped previews (top-left half) of each image
+ 5. Click the month number (1-12) that matches the image:
+    - 1 = January, 2 = February, 3 = March
+    - 4 = April, 5 = May, 6 = June
+    - 7 = July, 8 = August, 9 = September
+    - 10 = October, 11 = November, 12 = December
+ 6. You can jump to a specific image number
+ 7. Click "Apply & Rename" to rename files
+ 
+ 💡 Tips:
+ - Use the scrollbar to navigate through images
+ - Selected months are shown in red, unselected in green
+ - The counter shows how many images you've assigned months to
+ - Files are renamed to their month number (e.g., 01.jpg, 02.jpg)
+ 
+ 🎯 Perfect for:
+ - When you can visually identify months in images
+ - Previewing the top-left portion where dates often appear
+ - Quick month-based organization
+        """
+        
+        info_text_widget = scrolledtext.ScrolledText(info_frame, height=20, width=80, wrap=tk.WORD, state='disabled')
+        info_text_widget.pack(fill='both', expand=True)
+        info_text_widget.config(state='normal')
+        info_text_widget.insert('1.0', info_text.strip())
+        info_text_widget.config(state='disabled')
+        
     def setup_settings_tab(self):
         """Settings tab"""
         main_frame = ttk.Frame(self.settings_tab, padding="10")
@@ -1326,6 +1403,17 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
         folder = filedialog.askdirectory()
         if folder:
             self.simple_folder_var.set(folder)
+    
+    def open_month_selector(self):
+        """Open month selector window with cropped previews"""
+        try:
+            import month_selector
+            month_selector.open_month_selector(self.root)
+            self.log_message("🖼️ Month selector opened")
+        except ImportError:
+            messagebox.showerror("Error", "Month selector module not available")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open month selector: {e}")
     
     def simple_rename_images(self):
         """Rename images sequentially as 1.jpg, 2.jpg, etc."""
