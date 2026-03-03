@@ -502,6 +502,7 @@ class MonthSelector:
             return
         
         # Get current configuration from UI
+        station = self.station_var.get()
         station_code = self.station_code_var.get()
         year = self.year_var.get()
         obs_time = self.obs_time_var.get()
@@ -516,8 +517,9 @@ class MonthSelector:
         
         # Confirm rename
         count = len(self.selected_months)
+        filename_example = f"{station}-{station_code}-{year}{self.selected_months[sorted(self.selected_months.keys())[0]]:02d}01{obs_time}.ext" if self.selected_months else "STATION-STATIONCODE-YEARMONTHDAY TIME.ext"
         if not messagebox.askyesno("Confirm Rename", 
-                                   f"Rename {count} file(s) to format: {station_code}-{year}MMDD{obs_time}.ext?"):
+                                   f"Rename {count} file(s)?\n\nExample: {filename_example}"):
             return
         
         renamed = 0
@@ -532,16 +534,15 @@ class MonthSelector:
                 # Get file extension
                 ext = img_path.suffix
                 
-                # Create new filename with full station format
-                # Format: STATION-YEARMONTHDAY TIME.extension
-                # Since we don't have day, use 01 as placeholder
-                new_name = f"{station_code}-{year}{month:02d}01{obs_time}{ext}"
+                # Create new filename with full format: STATION-STATIONCODE-YEARMONTHDAY TIME.ext
+                # Example: CHIPAT01-MOZ304A-2026010106.jpg
+                new_name = f"{station}-{station_code}-{year}{month:02d}01{obs_time}{ext}"
                 new_path = img_path.parent / new_name
                 
                 # Handle existing files
                 counter = 1
                 while new_path.exists() and new_path != img_path:
-                    new_name = f"{station_code}-{year}{month:02d}01{obs_time}_{counter}{ext}"
+                    new_name = f"{station}-{station_code}-{year}{month:02d}01{obs_time}_{counter}{ext}"
                     new_path = img_path.parent / new_name
                     counter += 1
                 
@@ -560,7 +561,7 @@ class MonthSelector:
                 error_msg += f"\n... and {len(errors) - 10} more"
             messagebox.showwarning("Rename Complete with Errors", error_msg)
         else:
-            messagebox.showinfo("Success", f"Successfully renamed {renamed} files!\n\nFormat: {station_code}-{year}MMDD{obs_time}.ext")
+            messagebox.showinfo("Success", f"Successfully renamed {renamed} files!\n\nFormat: {station}-{station_code}-{year}MMDD{obs_time}.ext")
         
         # Reload images
         self.status_label.config(text=f"Renamed {renamed} files")
