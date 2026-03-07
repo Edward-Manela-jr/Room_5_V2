@@ -130,16 +130,6 @@ class ImageOrganizerApp:
         notebook.add(self.audio_tab, text='🎤 Audio Ordering')
         self.setup_audio_tab()
         
-        # Tab 6: Visual Number Ordering
-        self.visual_tab = ttk.Frame(notebook)
-        notebook.add(self.visual_tab, text='🔢 Visual Ordering')
-        self.setup_visual_tab()
-        
-        # Tab 7: Simple 1-12 Renaming
-        self.simple_rename_tab = ttk.Frame(notebook)
-        notebook.add(self.simple_rename_tab, text='🔢 1-12 Rename')
-        self.setup_simple_rename_tab()
-        
         # Tab 8: Month Selector with Cropped Previews
         self.month_selector_tab = ttk.Frame(notebook)
         notebook.add(self.month_selector_tab, text='🖼️ Month Selector')
@@ -1401,52 +1391,8 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
         
         threading.Thread(target=run_install, daemon=True).start()
     
-    def browse_visual_folder(self):
-        """Browse for visual folder"""
-        folder = filedialog.askdirectory()
-        if folder:
-            self.visual_folder_var.set(folder)
     
-    def open_visual_selector(self):
-        """Open visual number selector window"""
-        folder = self.visual_folder_var.get()
-        if not folder or not Path(folder).exists():
-            messagebox.showerror("Error", "Please select a valid folder")
-            return
-        
-        station = self.visual_station_var.get()
-        station_code = self.visual_station_code_var.get()
-        year = int(self.visual_year_var.get())
-        obs_time = self.visual_obs_time_var.get()
-        
-        if not station_code:
-            messagebox.showerror("Error", "Please enter a station code (e.g., MOZ304A)")
-            return
-        
-        try:
-            import visual_number_order
-            
-            def callback(results):
-                self.log_message("✅ Visual ordering applied successfully!")
-                for line in results:
-                    self.log_message(f"  {line}")
-                messagebox.showinfo("Success", "Visual ordering applied successfully!")
-            
-            orderer = visual_number_order.VisualNumberOrder(folder, station, station_code, year, obs_time)
-            orderer.create_selection_window(callback)
-            
-            self.log_message(f"🔢 Visual selector opened for {folder}")
-            
-        except ImportError:
-            messagebox.showerror("Error", "Visual ordering module not available")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to open visual selector: {e}")
-    
-    def browse_simple_folder(self):
-        """Browse for simple rename folder"""
-        folder = filedialog.askdirectory()
-        if folder:
-            self.simple_folder_var.set(folder)
+
     
     def open_month_selector(self):
         """Open month selector window with cropped previews"""
@@ -1466,71 +1412,7 @@ GitHub: https://github.com/Edward-Manela-jr/Room_5
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open month selector: {e}")
     
-    def simple_rename_images(self):
-        """Rename images sequentially as 1.jpg, 2.jpg, etc."""
-        folder = self.simple_folder_var.get()
-        if not folder or not Path(folder).exists():
-            messagebox.showerror("Error", "Please select a valid folder")
-            return
-        
-        if self.is_processing:
-            messagebox.showwarning("Warning", "Another operation is in progress")
-            return
-        
-        self.is_processing = True
-        self.status_var.set("Renaming images...")
-        
-        def run_rename():
-            try:
-                folder_path = Path(folder)
-                
-                # Get all image files sorted alphabetically
-                images = sorted(folder_path.glob("*.*"), key=lambda x: x.name.lower())
-                
-                # Filter to only image files
-                image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
-                images = [img for img in images if img.suffix.lower() in image_extensions]
-                
-                if not images:
-                    self.log_message("❌ No images found in folder")
-                    messagebox.showerror("Error", "No images found in the selected folder")
-                    return
-                
-                self.log_message(f"📁 Renaming {len(images)} images in: {folder}")
-                
-                # Rename images sequentially
-                renamed_count = 0
-                for i, img_path in enumerate(images, start=1):
-                    new_name = f"{i}{img_path.suffix}"
-                    new_path = folder_path / new_name
-                    
-                    # Skip if already has the correct name
-                    if img_path.name == new_name:
-                        self.log_message(f"  ✓ {img_path.name} (already correct)")
-                        continue
-                    
-                    # Handle name conflicts by using temp names
-                    if new_path.exists():
-                        temp_name = f"temp_{i}_{img_path.name}"
-                        temp_path = folder_path / temp_name
-                        img_path.rename(temp_path)
-                        img_path = temp_path
-                    
-                    img_path.rename(new_path)
-                    self.log_message(f"  {img_path.name} → {new_name}")
-                    renamed_count += 1
-                
-                self.log_message(f"✅ Successfully renamed {renamed_count} images!")
-                messagebox.showinfo("Success", f"Renamed {renamed_count} images to sequential numbers (1-{len(images)})")
-                
-            except Exception as e:
-                self.log_message(f"❌ Error: {e}")
-                messagebox.showerror("Error", f"Failed to rename images: {e}")
-            finally:
-                self.is_processing = False
-                self.status_var.set("Ready")
-        
-        threading.Thread(target=run_rename, daemon=True).start()
+
 
 def main():
     """Main entry point"""
